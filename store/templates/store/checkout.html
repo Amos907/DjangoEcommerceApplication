@@ -1,0 +1,190 @@
+{% extends 'store/base.html' %}
+{% load static %}
+
+{% block content %}
+
+<div class="container-fluid">
+	 <div class="row m-4">
+	 	<div class="col-md-6">
+	 		<div class="box-element">
+	 			<form id ="form">
+
+				  <div class="form-group">
+
+				  	<div id="user-info">
+				  		<input type="text" name = "name" class="form-control d-inline m-1" placeholder="Name" style="width: 275px;">
+
+				        <input type="text" name = "email" class="form-control d-inline m-1"placeholder="Email" style="width: 275px;">
+
+				  	</div>
+				     
+				     <hr>
+				     <h6>Shipping information:</h6>
+				     <hr>
+
+				     <input type="text" class="form-control d-inline m-1" name="address" required = "true" placeholder="Adress..." style="width: 275px;">
+
+				     <input type="text" class="form-control d-inline m-1" name = "city" required="true" placeholder="City..." style="width: 275px;">
+
+				     <input type="text" class="form-control d-inline m-1" name = "state" required = "true" placeholder="State..." style="width: 275px;">
+
+				     <input type="text" class="form-control d-inline m-1" name = "zip_code" required = "true" placeholder="Zip code..." style="width: 275px;">
+
+				    <hr>
+
+				    <input id="form-button" class="btn btn-success btn-block" type="submit" value="Continue">
+				  </div>
+			 
+				</form>
+
+	 		</div>
+
+	 		<br>
+
+		 	<div class ="box-element" id="payment-option" style="display: none;">
+					 <small>payment</small>
+					 <div id="paypal-button-container"></div>
+	 				<!-- <button type="button" class="btn btn-dark" id="make_payments">make payment</button> -->
+	 		</div>	
+
+	 	</div>
+
+	 	<div class="col-md-6">
+	 		<div class="box-element">
+	 			 
+	 			<a class="btn btn-outline-dark" href="{% url 'cart' %}"> Back to Cart</a>
+
+	 			<hr>
+
+	 			<h4>Order Summary</h4>
+
+	 			<hr>
+				
+				{% for item in items %}
+	 			<div class="d-flex">
+	 				<div style="flex:2"><img style="width: 100px;" src=" {{item.product.imageURL}}"></div>
+
+	 				<div style="flex: 2">{{item.product.name}}</div>
+					<div style="flex: 1">{{item.product.price|floatformat:2}}</div>
+					<div style="flex: 1">{{item.quantity}}</div>
+				</div>
+				{% endfor %}
+				<div class="mt-3">
+					<p><strong>Items:  {{order.get_cart_total}}</strong></p>
+					<p><strong>Total: $ {{order.get_total|floatformat:2}}</strong></p>
+				</div>
+					 
+	 			 
+	 		</div>
+	 	</div>
+	 </div>
+</div>
+
+<script src="https://www.paypal.com/sdk/js?client-id=AanF5LYTLkZ8ahpmrIFklHd6EFQdK-izsPUT7VLjM0SBOzml4pk4zqs5p5N3RET0i3LdGUgp4lw47ZRQ&currency=USD"></script>
+
+<script>
+	var total = '{{order.get_total}}'
+	// Render the PayPal button into #paypal-button-container
+	paypal.Buttons({
+		style:{
+			color:'blue'
+		},
+		// Set up the transaction
+		createOrder: function(data, actions) {
+			return actions.order.create({
+				purchase_units: [{
+					amount: {
+						value: parseFloat(total).toFixed(2)
+					}
+				}]
+			});
+		},
+
+		// Finalize the transaction
+		onApprove: function(data, actions) {
+			return actions.order.capture().then(function(details) {
+				submitformdata()
+			});
+		}
+
+
+	}).render('#paypal-button-container');
+</script>
+
+<script type="text/javascript">
+	var total = '{{order.get_total}}'
+
+	if (user != 'AnonymousUser'){
+		document.getElementById("user-info").innerHTML = "";
+	}
+
+	var form = document.getElementById('form')
+
+	form.addEventListener('submit',function(e){
+		e.preventDefault()
+		console.log("clicked")
+		document.getElementById("form-button").style.display = "none";
+		document.getElementById("payment-option").style.display = "block";
+	})
+
+	// document.getElementById("make_payments").addEventListener('click',function(e){
+	// 	submitformdata();
+	// })
+
+	function submitformdata(){
+		console.log("make_payments clicked");
+
+		var user_data = {
+			'user_name': null,
+			'user_email': null,
+			'total':total,
+		}
+
+		var shipping_info = {
+			'address': form.address.value,
+			'city':form.city.value,
+			'state': form.state.value,
+			'zip_code':form.zip_code.value,
+		}
+
+		if ( user == 'AnonymousUser'){
+			user_data.user_name = form.name.value
+			user_data.user_email = form.email.value
+		}
+
+		var url = 'process_order'
+
+		fetch(url,{
+			method:'POST',
+			headers:{
+				'Content-Type':'application/json',
+				'X-CSRFToken':csrftoken,
+			},
+
+			body:JSON.stringify({'user_data':user_data,'shipping_info':shipping_info})
+		})
+
+		.then((response) => response.json())
+		.then((data) => {
+			console.log('data:',data);
+			alert("Transaction completed");
+			cart =  {}
+			document.cookie = 'cart=' + JSON.stringify(cart) + ";domain=;path=/"
+			window.location.href = "{% url 'store' %}"
+		})
+	}
+
+	// $(document).ready(function(){
+	// 	$("#form").submit(function(e){
+	// 		e.preventDefault();
+	// 		console.log("clicked"); 
+
+	// 		$("#form-button").hide();
+	// 		$("#payment-option").show();
+
+	// 	});
+	// });
+	
+</script>
+ 
+{% endblock %}
