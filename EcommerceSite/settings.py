@@ -23,7 +23,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = '#g1xca748v3a)637ql6xj@l%)t+py7^q%xt257rsxue6jzso3c'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
  
 ALLOWED_HOSTS = ['online-shop-with-chechout.herokuapp.com','127.0.0.1']
 
